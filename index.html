@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Framescapee | Cinematic Editing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange: #ff4d00;
+      --orange-dim: #cc3d00;
+      --cream: #f5f0e8;
+      --dark: #080808;
+      --dark2: #111111;
+      --dark3: #1a1a1a;
+      --muted: rgba(255,255,255,0.45);
+      --border: rgba(255,255,255,0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--dark);
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      overflow-x: hidden;
+    }
+
+    /* ─── GRAIN OVERLAY ─── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='/image/background.png'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.035;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ─── CURSOR ─── */
+    .cursor {
+      width: 8px; height: 8px;
+      background: var(--orange);
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 10000;
+      transition: transform 0.15s ease;
+      transform: translate(-50%, -50%);
+    }
+    .cursor-ring {
+      width: 36px; height: 36px;
+      border: 1px solid rgba(255,77,0,0.5);
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: all 0.25s ease;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 22px 60px;
+      transition: all 0.4s ease;
+    }
+
+    nav.scrolled {
+      background: rgba(8,8,8,0.9);
+      backdrop-filter: blur(12px);
+      padding: 14px 60px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.7rem;
+      font-weight: 300;
+      letter-spacing: 0.12em;
+      color: white;
+      text-decoration: none;
+    }
+    .logo span { color: var(--orange); }
+
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      transition: color 0.3s;
+    }
+    .nav-links a:hover { color: white; }
+
+    .nav-cta {
+      background: transparent;
+      border: 1px solid var(--orange);
+      color: var(--orange) !important;
+      padding: 8px 22px;
+      border-radius: 2px;
+      font-size: 0.75rem !important;
+      letter-spacing: 0.16em !important;
+      transition: all 0.3s ease !important;
+    }
+    .nav-cta:hover {
+      background: var(--orange) !important;
+      color: white !important;
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      height: 100vh;
+      min-height: 700px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: url('/image/background.png') center/cover no-repeat;
+      transform: scale(1.08);
+      transition: transform 8s ease;
+    }
+    .hero-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(8,8,8,0.85) 40%, rgba(8,8,8,0.5) 100%);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      padding: 0 60px;
+      max-width: 800px;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.7rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 28px;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.8s ease 0.2s forwards;
+    }
+    .hero-tag::before {
+      content: '';
+      width: 30px; height: 1px;
+      background: var(--orange);
+    }
+
+    .hero h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(3rem, 7vw, 5.5rem);
+      font-weight: 300;
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      opacity: 0;
+      transform: translateY(30px);
+      animation: fadeUp 0.9s ease 0.4s forwards;
+    }
+    .hero h1 em {
+      font-style: italic;
+      color: var(--cream);
+    }
+    .hero h1 .accent { color: var(--orange); }
+
+    .hero-sub {
+      margin-top: 24px;
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 500px;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.8s ease 0.6s forwards;
+    }
+
+    .hero-actions {
+      margin-top: 44px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.8s ease 0.8s forwards;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--orange);
+      color: white;
+      text-decoration: none;
+      padding: 14px 32px;
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      border-radius: 2px;
+      transition: all 0.3s ease;
+    }
+    .btn-primary:hover { background: var(--orange-dim); transform: translateX(4px); }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      transition: color 0.3s;
+    }
+    .btn-ghost svg { transition: transform 0.3s; }
+    .btn-ghost:hover { color: white; }
+    .btn-ghost:hover svg { transform: translateX(4px); }
+
+    /* ─── SCROLL INDICATOR ─── */
+    .scroll-line {
+      position: absolute;
+      bottom: 40px;
+      left: 60px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      opacity: 0;
+      animation: fadeIn 1s ease 1.2s forwards;
+    }
+    .scroll-line span {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .scroll-line::after {
+      content: '';
+      width: 50px; height: 1px;
+      background: var(--muted);
+    }
+
+    /* ─── STATS STRIP ─── */
+    .stats {
+      background: var(--dark2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 40px 60px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+    }
+    .stat-item {
+      text-align: center;
+      position: relative;
+    }
+    .stat-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: 0; top: 10%; bottom: 10%;
+      width: 1px;
+      background: var(--border);
+    }
+    .stat-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3rem;
+      font-weight: 300;
+      color: var(--orange);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    /* ─── SECTION BASE ─── */
+    section { padding: 120px 60px; }
+
+    .section-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.68rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 20px;
+    }
+    .section-tag::before {
+      content: '';
+      width: 24px; height: 1px;
+      background: var(--orange);
+    }
+
+    h2.section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      font-weight: 300;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+    }
+    h2.section-title em { font-style: italic; color: var(--cream); }
+
+    /* ─── ABOUT ─── */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+      margin-top: 70px;
+    }
+
+    .about-image {
+      position: relative;
+    }
+    .about-image img {
+      width: 100%;
+      height: 500px;
+      object-fit: cover;
+      border-radius: 4px;
+      display: block;
+    }
+    .about-image::before {
+      content: '';
+      position: absolute;
+      top: -16px; left: -16px;
+      right: 16px; bottom: 16px;
+      border: 1px solid var(--orange);
+      border-radius: 4px;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    .about-badge {
+      position: absolute;
+      bottom: 24px; right: -20px;
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      padding: 16px 20px;
+      border-radius: 4px;
+    }
+    .about-badge strong {
+      display: block;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.2rem;
+      font-weight: 300;
+      color: var(--orange);
+    }
+    .about-badge span {
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .about-text p {
+      color: rgba(255,255,255,0.65);
+      line-height: 1.85;
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }
+
+    .about-highlights {
+      margin-top: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .highlight-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.8);
+    }
+    .highlight-dot {
+      width: 6px; height: 6px;
+      background: var(--orange);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ─── SERVICES ─── */
+    #services { background: var(--dark2); }
+
+    .services-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 70px;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2px;
+    }
+
+    .service-card {
+      background: var(--dark3);
+      padding: 50px 44px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s ease;
+      cursor: default;
+    }
+    .service-card::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 0; height: 2px;
+      background: var(--orange);
+      transition: width 0.5s ease;
+    }
+    .service-card:hover::before { width: 100%; }
+    .service-card:hover { background: #1e1e1e; }
+
+    .service-icon {
+      font-size: 2.2rem;
+      margin-bottom: 28px;
+      display: block;
+    }
+
+    .service-card h3 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.7rem;
+      font-weight: 400;
+      margin-bottom: 14px;
+    }
+
+    .service-card p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .service-num {
+      position: absolute;
+      top: 24px; right: 30px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 4rem;
+      font-weight: 300;
+      color: rgba(255,77,0,0.08);
+      line-height: 1;
+    }
+
+    /* ─── PORTFOLIO ─── */
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      grid-template-rows: auto;
+      gap: 12px;
+      margin-top: 60px;
+    }
+
+    .p-item {
+      overflow: hidden;
+      border-radius: 4px;
+      position: relative;
+    }
+    .p-item:nth-child(1) { grid-column: 1 / 7; grid-row: 1; }
+    .p-item:nth-child(2) { grid-column: 7 / 13; grid-row: 1; }
+    .p-item:nth-child(3) { grid-column: 1 / 5; grid-row: 2; }
+    .p-item:nth-child(4) { grid-column: 5 / 9; grid-row: 2; }
+    .p-item:nth-child(5) { grid-column: 9 / 13; grid-row: 2; }
+
+    .p-item img {
+      width: 100%;
+      height: 280px;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.6s ease;
+      filter: grayscale(20%);
+    }
+    .p-item:nth-child(1) img, .p-item:nth-child(2) img { height: 360px; }
+
+    .p-item:hover img { transform: scale(1.06); filter: grayscale(0%); }
+
+    .p-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.4s;
+      display: flex;
+      align-items: flex-end;
+      padding: 20px;
+    }
+    .p-item:hover .p-overlay { opacity: 1; }
+    .p-overlay span {
+      font-size: 0.75rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.8);
+    }
+
+    /* ─── PROCESS ─── */
+    #process { background: var(--dark2); }
+    .process-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      margin-top: 70px;
+      position: relative;
+    }
+    .process-steps::before {
+      content: '';
+      position: absolute;
+      top: 28px; left: 10%; right: 10%;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--border) 20%, var(--border) 80%, transparent);
+    }
+
+    .step {
+      text-align: center;
+      padding: 0 30px;
+    }
+    .step-num {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      color: var(--orange);
+      margin: 0 auto 28px;
+      position: relative;
+      z-index: 1;
+    }
+    .step h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem;
+      font-weight: 400;
+      margin-bottom: 10px;
+    }
+    .step p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* ─── TESTIMONIALS ─── */
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 70px;
+    }
+
+    .testi-card {
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      padding: 36px 30px;
+      border-radius: 4px;
+      position: relative;
+      transition: border-color 0.3s;
+    }
+    .testi-card:hover { border-color: rgba(255,77,0,0.3); }
+
+    .testi-quote {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3rem;
+      color: var(--orange);
+      opacity: 0.4;
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+
+    .testi-text {
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.8;
+      margin-bottom: 28px;
+      font-style: italic;
+    }
+
+    .testi-author {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .testi-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--dark3);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      color: var(--orange);
+    }
+    .testi-name { font-size: 0.9rem; font-weight: 500; }
+    .testi-role { font-size: 0.75rem; color: var(--muted); }
+
+    .stars { color: var(--orange); font-size: 0.75rem; margin-bottom: 4px; }
+
+    /* ─── PRICING ─── */
+    #pricing { background: var(--dark2); }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 70px;
+    }
+
+    .price-card {
+      border: 1px solid var(--border);
+      padding: 44px 36px;
+      border-radius: 4px;
+      position: relative;
+      transition: all 0.4s;
+    }
+    .price-card:hover { border-color: rgba(255,77,0,0.35); transform: translateY(-6px); }
+
+    .price-card.featured {
+      border-color: var(--orange);
+      background: linear-gradient(160deg, rgba(255,77,0,0.07) 0%, transparent 60%);
+    }
+
+    .price-badge {
+      position: absolute;
+      top: -14px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--orange);
+      color: white;
+      font-size: 0.65rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      padding: 5px 16px;
+      border-radius: 2px;
+    }
+
+    .price-name {
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .price-amount {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3.5rem;
+      font-weight: 300;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .price-amount sup {
+      font-size: 1.4rem;
+      vertical-align: super;
+      font-weight: 400;
+    }
+    .price-amount span { font-size: 1rem; color: var(--muted); }
+
+    .price-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    .price-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+    .price-features li {
+      font-size: 0.88rem;
+      color: rgba(255,255,255,0.7);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .price-features li::before {
+      content: '';
+      width: 5px; height: 5px;
+      background: var(--orange);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .btn-price {
+      display: block;
+      text-align: center;
+      padding: 13px;
+      border-radius: 2px;
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+    .btn-price-ghost {
+      border: 1px solid var(--border);
+      color: rgba(255,255,255,0.7);
+    }
+    .btn-price-ghost:hover {
+      border-color: var(--orange);
+      color: var(--orange);
+    }
+    .btn-price-solid {
+      background: var(--orange);
+      color: white;
+    }
+    .btn-price-solid:hover { background: var(--orange-dim); }
+
+    /* ─── CONTACT ─── */
+    .contact-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 100px;
+      align-items: center;
+    }
+
+    .contact-info h2 { margin-bottom: 24px; }
+
+    .contact-info p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.8;
+      margin-bottom: 40px;
+    }
+
+    .contact-detail {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--border);
+      text-decoration: none;
+      color: white;
+      transition: color 0.3s;
+    }
+    .contact-detail:hover { color: var(--orange); }
+    .contact-detail:first-of-type { border-top: 1px solid var(--border); }
+
+    .contact-icon {
+      width: 40px; height: 40px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .contact-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .contact-value { font-size: 0.95rem; margin-top: 2px; }
+
+    .contact-form { display: flex; flex-direction: column; gap: 18px; }
+
+    .form-group { position: relative; }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      background: var(--dark2);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 16px 20px;
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.3s;
+      appearance: none;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus { border-color: var(--orange); }
+    .form-group textarea { height: 130px; resize: none; }
+    .form-group select option { background: var(--dark2); }
+
+    .form-group label {
+      position: absolute;
+      top: -9px; left: 16px;
+      font-size: 0.65rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--orange);
+      background: var(--dark);
+      padding: 0 6px;
+    }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+    .btn-submit {
+      background: var(--orange);
+      color: white;
+      border: none;
+      padding: 16px 36px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.3s;
+      align-self: flex-start;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn-submit:hover { background: var(--orange-dim); transform: translateX(4px); }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: var(--dark2);
+      border-top: 1px solid var(--border);
+      padding: 60px;
+    }
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+    }
+    .footer-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 300;
+      letter-spacing: 0.1em;
+      color: white;
+    }
+    .footer-logo span { color: var(--orange); }
+    .footer-copy {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .footer-social {
+      display: flex;
+      gap: 20px;
+    }
+    .footer-social a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      transition: color 0.3s;
+    }
+    .footer-social a:hover { color: var(--orange); }
+
+    /* ─── WHATSAPP FLOAT ─── */
+    .wa-float {
+      position: fixed;
+      bottom: 32px; right: 32px;
+      z-index: 5000;
+      width: 56px; height: 56px;
+      background: #25d366;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(37,211,102,0.35);
+      transition: transform 0.3s, box-shadow 0.3s;
+      text-decoration: none;
+    }
+    .wa-float:hover { transform: scale(1.1); box-shadow: 0 6px 28px rgba(37,211,102,0.5); }
+    .wa-float svg { width: 28px; height: 28px; fill: white; }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 900px) {
+      nav { padding: 18px 24px; }
+      nav.scrolled { padding: 12px 24px; }
+      .nav-links { display: none; }
+      section { padding: 80px 24px; }
+      .hero-content { padding: 0 24px; }
+      .stats { grid-template-columns: repeat(2,1fr); padding: 36px 24px; gap: 20px; }
+      .stat-item::after { display: none; }
+      .about-grid, .contact-wrap { grid-template-columns: 1fr; gap: 48px; }
+      .services-grid { grid-template-columns: 1fr; }
+      .portfolio-grid { grid-template-columns: 1fr 1fr; display: flex; flex-wrap: wrap; }
+      .p-item { flex: 1 1 45%; }
+      .process-steps { grid-template-columns: 1fr 1fr; gap: 40px; }
+      .process-steps::before { display: none; }
+      .testimonials-grid, .pricing-grid { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .footer-inner { flex-direction: column; text-align: center; }
+      .scroll-line { left: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Custom cursor -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- NAV -->
+  <nav id="navbar">
+    <a href="#" class="logo">Frame<span></span>scapee.co</a>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#portfolio">Portfolio</a></li>
+      <li><a href="#process">Process</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#contact" class="nav-cta">Book Now</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg" id="heroBg"></div>
+    <div class="hero-content">
+      <div class="hero-tag">Cinematic Editing Studio</div>
+      <h1>
+        Every Frame<br>
+        <em>Tells a Story</em><br>
+        <span class="accent">We Tell Yours</span>
+      </h1>
+      <p class="hero-sub">
+        Transforming your most cherished moments into timeless cinematic films. Weddings, reels, portraits — captured with soul.
+      </p>
+      <div class="hero-actions">
+        <a href="#contact" class="btn-primary">
+          Book a Session
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 3l5 4-5 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </a>
+        <a href="#portfolio" class="btn-ghost">
+          View Portfolio
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8h14M9 3l6 5-6 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="scroll-line">
+      <span>Scroll</span>
+    </div>
+  </section>
+
+  
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="about-grid">
+      <div class="about-image reveal">
+        <img src="image/main.png" alt="Photography">
+       
+      </div>
+      <div class="about-text">
+        <div class="section-tag reveal">About Us</div>
+        <h2 class="section-title reveal">
+          We Don't Just<br>
+          <em>Shoot — We Feel</em>
+        </h2>
+        <p class="reveal reveal-delay-1">
+          Framescapee is a cinematic editing and production studio built on one belief: every moment deserves to be remembered beautifully. We don't just document — we craft visual poetry.
+        </p>
+        <p class="reveal reveal-delay-2">
+          From the nervous excitement before a wedding to the laughter shared at a celebration, we capture what words can't — the feeling in the frame.
+        </p>
+        <div class="about-highlights">
+          <div class="highlight-item reveal reveal-delay-1">
+            <div class="highlight-dot"></div>
+            Cinematic colour grading with a signature look
+          </div>
+          <div class="highlight-item reveal reveal-delay-2">
+            <div class="highlight-dot"></div>
+            Same-week reel delivery for social media
+          </div>
+          <div class="highlight-item reveal reveal-delay-3">
+            <div class="highlight-dot"></div>
+            Licensed music curated for every film
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section id="services">
+    <div class="services-header">
+      <div>
+        <div class="section-tag reveal">What We Offer</div>
+        <h2 class="section-title reveal">Our <em>Craft</em></h2>
+      </div>
+    </div>
+    <div class="services-grid">
+      <div class="service-card reveal">
+        <span class="service-icon">💍</span>
+        <span class="service-num">01</span>
+        <h3>Wedding Films</h3>
+        <p>Full-day coverage transformed into a cinematic narrative. From getting-ready shots to the last dance — every emotion, preserved forever.</p>
+      </div>
+      <div class="service-card reveal reveal-delay-1">
+        <span class="service-icon">🎬</span>
+        <span class="service-num">02</span>
+        <h3>Reels & Stories</h3>
+        <p>Short-form content crafted for Instagram and YouTube. Trending edits, smooth transitions, and storytelling that stops the scroll.</p>
+      </div>
+      <div class="service-card reveal reveal-delay-2">
+        <span class="service-icon">📸</span>
+        <span class="service-num">03</span>
+        <h3>Photography</h3>
+        <p>Editorial-style stills that feel like film frames. Portraits, couples, events — photographed with intention and colour-graded to perfection.</p>
+      </div>
+      <div class="service-card reveal reveal-delay-3">
+        <span class="service-icon">🎥</span>
+        <span class="service-num">04</span>
+        <h3>Videography</h3>
+        <p>Professional-grade video production for events, brand films, and personal projects. Brought to life with cinematic grading and sound design.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PORTFOLIO -->
+  <section id="portfolio">
+    <div class="section-tag reveal">Our Work</div>
+    <h2 class="section-title reveal">A Glimpse of <em>Frames</em></h2>
+    <div class="portfolio-grid">
+      <div class="p-item reveal">
+        <img src="/image/IMG-20260424-WA0010.jpg" alt="">
+        <div class="p-overlay"><span></span></div>
+      </div>
+      <div class="p-item reveal reveal-delay-1">
+        <img src="/image/framecape.jpg" alt="">
+        <div class="p-item"><span></span></div>
+      </div>
+      <div class="p-item reveal reveal-delay-1">
+        <img src="/image/654094455_17892451038445707_7622726199872148085_n.jpg" alt="">
+        <div class="p-overlay"><span> </span></div>
+      </div>
+      <div class="p-item reveal reveal-delay-2">
+        <img src="/image/655219896_17892966210445707_3478015722711530827_n.jpg" alt="">
+        <div class="p-overlay"><span></span></div>
+      </div>
+    </div>
+  </section>
+<blockquote class="instagram-media" data-instgrm-captioned data-instgrm-permalink="https://www.instagram.com/reel/DWofxBUiHL7/?utm_source=ig_embed&amp;utm_campaign=loading" data-instgrm-version="14" style=" background:#FFF; border:0; border-radius:3px; box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15); margin: 1px; max-width:540px; min-width:326px; padding:0; width:99.375%; width:-webkit-calc(100% - 2px); width:calc(100% - 2px);"><div style="padding:16px;"> <a href="https://www.instagram.com/reel/DWofxBUiHL7/?utm_source=ig_embed&amp;utm_campaign=loading" style=" background:#FFFFFF; line-height:0; padding:0 0; text-align:center; text-decoration:none; width:100%;" target="_blank"> <div style=" display: flex; flex-direction: row; align-items: center;"> <div style="background-color: #F4F4F4; border-radius: 50%; flex-grow: 0; height: 40px; margin-right: 14px; width: 40px;"></div> <div style="display: flex; flex-direction: column; flex-grow: 1; justify-content: center;"> <div style=" background-color: #F4F4F4; border-radius: 4px; flex-grow: 0; height: 14px; margin-bottom: 6px; width: 100px;"></div> <div style=" background-color: #F4F4F4; border-radius: 4px; flex-grow: 0; height: 14px; width: 60px;"></div></div></div><div style="padding: 19% 0;"></div> <div style="display:block; height:50px; margin:0 auto 12px; width:50px;"><svg width="50px" height="50px" viewBox="0 0 60 60" version="1.1" xmlns="https://www.w3.org/2000/svg" xmlns:xlink="https://www.w3.org/1999/xlink"><g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"><g transform="translate(-511.000000, -20.000000)" fill="#000000"><g><path d="M556.869,30.41 C554.814,30.41 553.148,32.076 553.148,34.131 C553.148,36.186 554.814,37.852 556.869,37.852 C558.924,37.852 560.59,36.186 560.59,34.131 C560.59,32.076 558.924,30.41 556.869,30.41 M541,60.657 C535.114,60.657 530.342,55.887 530.342,50 C530.342,44.114 535.114,39.342 541,39.342 C546.887,39.342 551.658,44.114 551.658,50 C551.658,55.887 546.887,60.657 541,60.657 M541,33.886 C532.1,33.886 524.886,41.1 524.886,50 C524.886,58.899 532.1,66.113 541,66.113 C549.9,66.113 557.115,58.899 557.115,50 C557.115,41.1 549.9,33.886 541,33.886 M565.378,62.101 C565.244,65.022 564.756,66.606 564.346,67.663 C563.803,69.06 563.154,70.057 562.106,71.106 C561.058,72.155 560.06,72.803 558.662,73.347 C557.607,73.757 556.021,74.244 553.102,74.378 C549.944,74.521 548.997,74.552 541,74.552 C533.003,74.552 532.056,74.521 528.898,74.378 C525.979,74.244 524.393,73.757 523.338,73.347 C521.94,72.803 520.942,72.155 519.894,71.106 C518.846,70.057 518.197,69.06 517.654,67.663 C517.244,66.606 516.755,65.022 516.623,62.101 C516.479,58.943 516.448,57.996 516.448,50 C516.448,42.003 516.479,41.056 516.623,37.899 C516.755,34.978 517.244,33.391 517.654,32.338 C518.197,30.938 518.846,29.942 519.894,28.894 C520.942,27.846 521.94,27.196 523.338,26.654 C524.393,26.244 525.979,25.756 528.898,25.623 C532.057,25.479 533.004,25.448 541,25.448 C548.997,25.448 549.943,25.479 553.102,25.623 C556.021,25.756 557.607,26.244 558.662,26.654 C560.06,27.196 561.058,27.846 562.106,28.894 C563.154,29.942 563.803,30.938 564.346,32.338 C564.756,33.391 565.244,34.978 565.378,37.899 C565.522,41.056 565.552,42.003 565.552,50 C565.552,57.996 565.522,58.943 565.378,62.101 M570.82,37.631 C570.674,34.438 570.167,32.258 569.425,30.349 C568.659,28.377 567.633,26.702 565.965,25.035 C564.297,23.368 562.623,22.342 560.652,21.575 C558.743,20.834 556.562,20.326 553.369,20.18 C550.169,20.033 549.148,20 541,20 C532.853,20 531.831,20.033 528.631,20.18 C525.438,20.326 523.257,20.834 521.349,21.575 C519.376,22.342 517.703,23.368 516.035,25.035 C514.368,26.702 513.342,28.377 512.574,30.349 C511.834,32.258 511.326,34.438 511.181,37.631 C511.035,40.831 511,41.851 511,50 C511,58.147 511.035,59.17 511.181,62.369 C511.326,65.562 511.834,67.743 512.574,69.651 C513.342,71.625 514.368,73.296 516.035,74.965 C517.703,76.634 519.376,77.658 521.349,78.425 C523.257,79.167 525.438,79.673 528.631,79.82 C531.831,79.965 532.853,80.001 541,80.001 C549.148,80.001 550.169,79.965 553.369,79.82 C556.562,79.673 558.743,79.167 560.652,78.425 C562.623,77.658 564.297,76.634 565.965,74.965 C567.633,73.296 568.659,71.625 569.425,69.651 C570.167,67.743 570.674,65.562 570.82,62.369 C570.966,59.17 571,58.147 571,50 C571,41.851 570.966,40.831 570.82,37.631"></path></g></g></g></svg></div><div style="padding-top: 8px;"> <div style=" color:#3897f0; font-family:Arial,sans-serif; font-size:14px; font-style:normal; font-weight:550; line-height:18px;">View this post on Instagram</div></div><div style="padding: 12.5% 0;"></div> <div style="display: flex; flex-direction: row; margin-bottom: 14px; align-items: center;"><div> <div style="background-color: #F4F4F4; border-radius: 50%; height: 12.5px; width: 12.5px; transform: translateX(0px) translateY(7px);"></div> <div style="background-color: #F4F4F4; height: 12.5px; transform: rotate(-45deg) translateX(3px) translateY(1px); width: 12.5px; flex-grow: 0; margin-right: 14px; margin-left: 2px;"></div> <div style="background-color: #F4F4F4; border-radius: 50%; height: 12.5px; width: 12.5px; transform: translateX(9px) translateY(-18px);"></div></div><div style="margin-left: 8px;"> <div style=" background-color: #F4F4F4; border-radius: 50%; flex-grow: 0; height: 20px; width: 20px;"></div> <div style=" width: 0; height: 0; border-top: 2px solid transparent; border-left: 6px solid #f4f4f4; border-bottom: 2px solid transparent; transform: translateX(16px) translateY(-4px) rotate(30deg)"></div></div><div style="margin-left: auto;"> <div style=" width: 0px; border-top: 8px solid #F4F4F4; border-right: 8px solid transparent; transform: translateY(16px);"></div> <div style=" background-color: #F4F4F4; flex-grow: 0; height: 12px; width: 16px; transform: translateY(-4px);"></div> <div style=" width: 0; height: 0; border-top: 8px solid #F4F4F4; border-left: 8px solid transparent; transform: translateY(-4px) translateX(8px);"></div></div></div> <div style="display: flex; flex-direction: column; flex-grow: 1; justify-content: center; margin-bottom: 24px;"> <div style=" background-color: #F4F4F4; border-radius: 4px; flex-grow: 0; height: 14px; margin-bottom: 6px; width: 224px;"></div> <div style=" background-color: #F4F4F4; border-radius: 4px; flex-grow: 0; height: 14px; width: 144px;"></div></div></a><p style=" color:#c9c8cd; font-family:Arial,sans-serif; font-size:14px; line-height:17px; margin-bottom:0; margin-top:8px; overflow:hidden; padding:8px 0 7px; text-align:center; text-overflow:ellipsis; white-space:nowrap;"><a href="https://www.instagram.com/reel/DWofxBUiHL7/?utm_source=ig_embed&amp;utm_campaign=loading" style=" color:#c9c8cd; font-family:Arial,sans-serif; font-size:14px; font-style:normal; font-weight:normal; line-height:17px; text-decoration:none;" target="_blank">A post shared by نواز🎗 (@_nawxx_07)</a></p></div></blockquote>
+<script async src="//www.instagram.com/embed.js"></script>
+  <!-- PROCESS -->
+  <section id="process">
+    <div style="text-align:center;">
+      <div class="section-tag reveal" style="justify-content:center;">How It Works</div>
+      <h2 class="section-title reveal">Our <em>Process</em></h2>
+    </div>
+    <div class="process-steps">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <h4>Discovery Call</h4>
+        <p>We learn your vision, style preferences, and what moments matter most to you.</p>
+      </div>
+      <div class="step reveal reveal-delay-1">
+        <div class="step-num">02</div>
+        <h4>Shoot Day</h4>
+        <p>We arrive, we observe, and we capture — naturally, without disrupting your day.</p>
+      </div>
+      <div class="step reveal reveal-delay-2">
+        <div class="step-num">03</div>
+        <h4>Editing</h4>
+        <p>Colour grading, music selection, and careful cuts — your film is crafted with care.</p>
+      </div>
+      <div class="step reveal reveal-delay-3">
+        <div class="step-num">04</div>
+        <h4>Delivery</h4>
+        <p>Your finished film delivered in HD, ready to share, watch, and treasure forever.</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="contact-wrap">
+      <div class="contact-info">
+        <div class="section-tag reveal">Get In Touch</div>
+        <h2 class="section-title reveal">Let's Create<br><em>Something</em> Beautiful</h2>
+        <p class="reveal">Every love story, every milestone deserves a film. Tell us about yours.</p>
+
+        <a href="tel:+919148928107" class="contact-detail reveal">
+          <div class="contact-icon">📞</div>
+          <div>
+            <div class="contact-label">Call Us</div>
+            <div class="contact-value">+91 91489 28107</div>
+          </div>
+        </a>
+        <a href="https://instagram.com/framescapee.co" class="contact-detail reveal reveal-delay-1" target="_blank">
+          <div class="contact-icon">🅾</div>
+          <div>
+            <div class="contact-label">Instagram</div>
+            <div class="contact-value">@framescapee.co</div>
+          </div>
+        </a>
+        <a href="https://wa.me/919148928107" class="contact-detail reveal reveal-delay-2" target="_blank">
+          <div class="contact-icon">💬</div>
+          <div>
+            <div class="contact-label">WhatsApp</div>
+            <div class="contact-value">Chat with us directly</div>
+          </div>
+        </a>
+      </div>
+
+      <div class="contact-form reveal">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Your Name</label>
+            <input type="text" placeholder="Sneha Sharma">
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="tel" placeholder="+91 98765 43210">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Service</label>
+          <select>
+            <option value="">Select a service...</option>
+            <option>Wedding Film</option>
+            <option>Reel / Stories</option>
+            <option>Photography</option>
+            <option>Videography</option>
+            <option>Brand Film</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Event Date</label>
+          <input type="date">
+        </div>
+        <div class="form-group">
+          <label>Tell Us More</label>
+          <textarea placeholder="Share your vision, venue, and anything we should know..."></textarea>
+        </div>
+        <button class="btn-submit" onclick="alert('Message sent! We\'ll get back to you shortly.')">
+          Send Message
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 3l5 4-5 4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-logo">Frame<span></span>scapee.co</div>
+      <div class="footer-copy">© 2026 Framescapee.co. All Rights Reserved. Crafted with ❤️ in Mangalur.</div>
+      <div class="footer-social">
+        <a href="https://instagram.com/framescapee.co" target="_blank">Instagram</a>
+        <a href="https://wa.me/919148928107" target="_blank">WhatsApp</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- WhatsApp Float -->
+  <a href="https://wa.me/919148928107" class="wa-float" target="_blank" title="Chat on WhatsApp">
+    <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 1C7.73 1 1 7.73 1 16c0 2.63.68 5.1 1.87 7.25L1 31l7.98-1.83A15 15 0 0 0 16 31c8.27 0 15-6.73 15-15S24.27 1 16 1zm0 27.5a12.47 12.47 0 0 1-6.35-1.74l-.45-.27-4.73 1.09 1.1-4.62-.3-.47A12.47 12.47 0 0 1 3.5 16C3.5 9.1 9.1 3.5 16 3.5S28.5 9.1 28.5 16 22.9 28.5 16 28.5zm6.84-9.26c-.37-.19-2.2-1.09-2.54-1.21-.34-.12-.59-.19-.83.19-.25.37-.95 1.21-1.17 1.46-.21.25-.43.28-.8.09-.37-.19-1.56-.57-2.97-1.83a11.14 11.14 0 0 1-2.06-2.55c-.21-.37-.02-.57.16-.76.16-.16.37-.43.55-.64.19-.21.25-.37.37-.62.12-.25.06-.46-.03-.64-.09-.19-.83-2-.14-2.74.1-.1.24-.16.39-.18.22-.02 1.27-.02 1.62.49l.2.3c.34.52.88 1.35.97 1.55.09.21.15.46-.06.67-.09.09-.19.21-.3.33-.11.12-.22.23-.31.34-.09.11-.03.26.06.38.09.12.83 1.27 1.79 1.73.27.13 1.5.62 1.93.4.43-.22.48-.49.61-.55.13-.06.26-.03.38.03.12.06 1.18.55 1.38.65.2.1.34.16.39.25.05.09.04.51-.13.89z"/>
+    </svg>
+  </a>
+
+  <script>
+    // ── CURSOR ──
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; cursor.style.left = mx + 'px'; cursor.style.top = my + 'px'; });
+    (function animRing() { rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12; ring.style.left = rx + 'px'; ring.style.top = ry + 'px'; requestAnimationFrame(animRing); })();
+
+    // ── NAVBAR SCROLL ──
+    window.addEventListener('scroll', () => {
+      document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
+    });
+
+    // ── HERO PARALLAX ──
+    window.addEventListener('scroll', () => {
+      document.getElementById('heroBg').style.transform = `scale(1.08) translateY(${window.scrollY * 0.25}px)`;
+    });
+
+    // ── REVEAL ANIMATIONS ──
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    reveals.forEach(r => observer.observe(r));
+
+    // ── COUNTER ANIMATION ──
+    const counters = document.querySelectorAll('.stat-num[data-target]');
+    const counterObs = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target;
+          const target = +el.dataset.target;
+          const suffix = target >= 100 ? '+' : '+';
+          let count = 0;
+          const step = Math.ceil(target / 40);
+          const timer = setInterval(() => {
+            count = Math.min(count + step, target);
+            el.textContent = count + suffix;
+            if (count >= target) clearInterval(timer);
+          }, 40);
+          counterObs.unobserve(el);
+        }
+      });
+    }, { threshold: 0.5 });
+    counters.forEach(c => counterObs.observe(c));
+  </script>
+</body>
+</html>
